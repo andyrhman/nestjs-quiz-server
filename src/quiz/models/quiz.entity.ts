@@ -13,7 +13,6 @@ export class Question {
     id: number;
 
     @Column()
-    @Generated('uuid')
     questionUuid: string;
 
     @Column()
