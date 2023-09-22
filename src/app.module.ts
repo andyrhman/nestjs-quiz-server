@@ -5,6 +5,7 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from './user/user.module';
 import { CommonModule } from './common/common.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -14,7 +15,7 @@ import { CommonModule } from './common/common.module';
       type: 'postgres',
       host: process.env.POSTGRES_HOST,
       port: parseInt(process.env.POSTGRES_PORT, 10),
-      username: 'postgres',
+      username: process.env.POSTGRES_USERNAME,
       password: process.env.POSTGRES_PASSWORD,
       database: process.env.POSTGRES_DATABASE,
       // entities: [],
@@ -23,7 +24,8 @@ import { CommonModule } from './common/common.module';
     }),
     QuizModule,
     UserModule,
-    CommonModule
+    CommonModule,
+    AuthModule
   ],
 })
 export class AppModule {}
