@@ -1,6 +1,7 @@
 // user.entity.ts
 import { Exclude } from 'class-transformer';
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn} from 'typeorm';
+import { Classroom } from 'src/classroom/models/classroom.entity';
+import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn} from 'typeorm';
 
 @Entity('users')
 export class User {
@@ -25,4 +26,7 @@ export class User {
 
   @UpdateDateColumn()
   updated_at: string;
+
+  @OneToMany(() => Classroom, (classroom) => classroom.user)
+  classroom: Classroom[]
 }
