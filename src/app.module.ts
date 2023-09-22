@@ -3,6 +3,8 @@ import { QuizModule } from './quiz/quiz.module';
 import { ConfigurationModule } from 'config/config.module';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { UserModule } from './user/user.module';
+import { CommonModule } from './common/common.module';
 
 @Module({
   imports: [
@@ -19,7 +21,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       autoLoadEntities: true, //delete if production
       synchronize: true,
     }),
-    QuizModule
+    QuizModule,
+    UserModule,
+    CommonModule
   ],
 })
 export class AppModule {}
