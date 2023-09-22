@@ -37,16 +37,18 @@ export class AuthController {
         // Hash Password
         const hashPassword = await argon2.hash(body.password);
 
-        response.status(200);
-        await this.userService.create({
+        const newUser = await this.userService.create({
             fullname: body.fullname,
             username: body.username,
             email: body.email,
             password: hashPassword,
         });
 
-        return{
-            message: "Account successfully created"
+        response.status(200);
+        return {
+            fullname: newUser.fullname,
+            username: newUser.username,
+            email: newUser.email,
         };
     }
 
