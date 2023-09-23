@@ -1,5 +1,6 @@
 import { Classroom } from 'src/classroom/models/classroom.entity';
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Score } from 'src/quiz/models/score.entity';
+import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity('categories')
 export class Category{
@@ -10,5 +11,10 @@ export class Category{
     name: string;
 
     @OneToMany(() => Classroom, (classroom) => classroom.category)
-    classroom: Classroom[]
+    classroom: Classroom[];
+
+    @ManyToOne(() => Score, (score) => score.category, {
+        createForeignKeyConstraints: false,
+    })
+    score: Score;
 }

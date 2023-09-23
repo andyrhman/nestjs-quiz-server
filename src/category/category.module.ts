@@ -11,6 +11,7 @@ import { Category } from './models/category.entity';
     CommonModule
   ],
   providers: [CategoryService],
-  controllers: [CategoryController]
+  controllers: [CategoryController],
+  exports: [CategoryService]
 })
 export class CategoryModule {}

@@ -4,16 +4,18 @@ import {
     PrimaryGeneratedColumn,
     ManyToOne,
     Entity,
+    JoinColumn,
 } from 'typeorm';
 import { Score } from './score.entity';
+import { Category } from 'src/category/models/category.entity';
 
 @Entity('questions')
 export class Question {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column()
-    questionUuid: string;
+    @Column({name: "category_id"})
+    category_id: string;
 
     @Column()
     question_no: string;
@@ -36,9 +38,7 @@ export class Question {
     @Column()
     correctAnswer: string;
 
-    @Column({ default: false })
-    answered: boolean;
-
-    @ManyToOne(() => Score, score => score.questions)
-    score: Score;
+    @ManyToOne(() => Category)
+    @JoinColumn({name: "category_id"})
+    category: Category
 }
