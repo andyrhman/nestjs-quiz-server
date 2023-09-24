@@ -21,7 +21,7 @@ export class Score{
     @Column({name: "category_id"})
     category_id: string;
 
-    @Column({ default: 0 })
+    @Column('double precision', { default: 0 })
     score: number;
 
     @Column({ default: false })
