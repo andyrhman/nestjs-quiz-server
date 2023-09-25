@@ -26,7 +26,4 @@ export class User {
 
   @UpdateDateColumn()
   updated_at: string;
-
-  @OneToMany(() => Classroom, (classroom) => classroom.user)
-  classroom: Classroom[]
 }
