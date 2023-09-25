@@ -5,10 +5,15 @@ import { Repository } from 'typeorm';
 import { UserClassroom } from './models/user-classroom.entity';
 
 @Injectable()
-export class UserClassroomService extends AbstractService{
+export class UserClassroomService extends AbstractService {
     constructor(
         @InjectRepository(UserClassroom) private readonly userClassroomRepository: Repository<UserClassroom>,
     ) {
         super(userClassroomRepository)
     }
+
+    async createUserClassroom(data: UserClassroom[]): Promise<any> {
+        return this.userClassroomRepository.save(data);
+    }
+
 }
