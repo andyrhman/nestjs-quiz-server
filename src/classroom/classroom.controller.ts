@@ -1,5 +1,5 @@
 import { Request } from 'express';
-import { Body, Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
 import { ClassroomService } from './classroom.service';
 import { UserClassroomService } from './userclassroom.service';
 import { AuthService } from 'src/auth/auth.service';
@@ -26,6 +26,12 @@ export class ClassroomController {
     async create(
         @Body() body: any
     ) {
+        const checkClassroom = await this.classroomService.findOne({name: body.name});
+
+        if (checkClassroom) {
+            throw new BadRequestException(`Classroom with the name '${body.name}' already exists`)
+        };
+
         const classroom = await this.classroomService.create({
             name: body.name,
             category_id: body.category_id
@@ -42,9 +48,9 @@ export class ClassroomController {
             };
             classrooms.push(classr);
         }
-    
+
         await this.userClassroomService.createUserClassroom(classrooms);
-        
+
         return {
             message: "Created successfully"
         }
@@ -55,20 +61,39 @@ export class ClassroomController {
     async assign(
         @Param('id') id: number,
         @Body() body: any
-    ){
+    ) {
+        // * Initialize an empty array to hold the UserClassroom entities
         let classrooms = [];
 
+        // * Loop through each user in the classrooms array from the request body
+
         for (let i = 0; i < body.classrooms.length; i++) {
+
+            // * find an existing UserClassroom entity with the provided user_id
+
+            const user = await this.userClassroomService.findOne({ user_id: body.classrooms[i].user_id, classroom_id: id }, ['user']);
+
+            // ? If a UserClassroom entity is found and the user_id matches the provided user_id, throw an exception
+            
+            if (user && user.user_id === body.classrooms[i].user_id) {
+                throw new BadRequestException(`User with the name "${user.user.fullname}" already exists in the classroom`)
+            }
+
+            
+            // ? Create a new UserClassroom object with the user data and the classroom_id
             let classr = {
                 ...body.classrooms[i],
                 classroom_id: id
             };
+
+            // * Add the new UserClassroom object to the classrooms array
+            
             classrooms.push(classr);
         }
-    
+
         await this.userClassroomService.createUserClassroom(classrooms);
 
-        return{
+        return {
             message: "Successfully asigned"
         }
     }
