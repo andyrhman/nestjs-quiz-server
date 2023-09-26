@@ -49,6 +49,10 @@ export abstract class AbstractService {
         return this.repository.findOne({ where: options, relations });
     }
 
+    async find(options, relations = []): Promise<any[]> {
+        return this.repository.find({ where: options, relations });
+    }
+
     // Find a user by their username or email
     async findByUsernameOrEmail(username: string, email: string): Promise<any | null> {
         return this.repository.findOne({

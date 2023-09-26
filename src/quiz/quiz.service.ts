@@ -5,6 +5,8 @@ import { Repository } from 'typeorm';
 import { Score } from './models/score.entity';
 import { AbstractService } from 'src/common/abstract.service';
 import { UserQuestion } from './models/answered.entity';
+import { TimeLimit } from './models/time.entity';
+import { UserQuestionTimer } from './models/user-timer.entity';
 
 @Injectable()
 export class QuizService extends AbstractService {
@@ -12,6 +14,8 @@ export class QuizService extends AbstractService {
         @InjectRepository(Question) private readonly questionRepository: Repository<Question>,
         @InjectRepository(Score) private readonly scoreRepository: Repository<Score>,
         @InjectRepository(UserQuestion) private readonly userQuestionRepository: Repository<UserQuestion>,
+        @InjectRepository(TimeLimit) private readonly quizTimeRepository: Repository<TimeLimit>,
+        @InjectRepository(UserQuestionTimer) private readonly userQuestionTimerRepository: Repository<UserQuestionTimer>,
     ) {
         super(questionRepository)
     }
@@ -20,24 +24,63 @@ export class QuizService extends AbstractService {
         return this.questionRepository.save(data);
     }
 
+    async createTimeLimit(data: TimeLimit): Promise<any> {
+        return this.quizTimeRepository.save(data);
+    }    
+
     async deleteQ(id: number): Promise<any> {
         return this.repository.delete(id);
     }
 
+    async startTimer(userId: string, categoryId: string): Promise<any> {
+        let score = await this.scoreRepository.findOne({ where: { category_id: categoryId, user_id: userId } });
+    
+        if (!score) {
+            score = this.scoreRepository.create();
+            score.category_id = categoryId;
+            score.user_id = userId;
+            score = await this.scoreRepository.save(score);
+        }
+    
+        let timer = await this.userQuestionTimerRepository.findOne({ where: { score_id: score.id } });
+    
+        if (!timer) {
+            timer = this.userQuestionTimerRepository.create();
+            timer.score_id = score.id;
+            timer.startedAt = Date.now();
+            timer = await this.userQuestionTimerRepository.save(timer);
+        }
+    
+        return timer;
+    }    
 
     //* Answering the question without pagination
     // ? https://www.phind.com/search?cache=xw1i7ijdug6q25tysmf54fo3
     async answerQuestions(userId: string, uuid: string, answers: { question_no: string, answer: string }[]): Promise<any> {
         let score = await this.scoreRepository.findOne({ where: { category_id: uuid, user_id: userId } });
+
         if (!score) {
-            score = this.scoreRepository.create();
-            score.category_id = uuid;
-            score.user_id = userId;
-            score = await this.scoreRepository.save(score);
+            throw new BadRequestException('No score found');
         }
 
         if (score.completed) {
             throw new BadRequestException('Questions already answered');
+        }
+    
+        let timer = await this.userQuestionTimerRepository.findOne({ where: { score_id: score.id } });
+    
+        if (!timer) {
+            throw new BadRequestException('No timer found');
+        }
+    
+        const timeLimit = await this.quizTimeRepository.findOne({ where: { category_id: uuid } });
+        const timeElapsed = Date.now() - timer.startedAt;
+    
+        if (timeElapsed > timeLimit.time_limit * 60 * 1000) {
+            score.completed = true;
+            score.score = 0;
+            await this.scoreRepository.save(score);
+            throw new BadRequestException('Time limit exceeded, questions already answered');
         }
 
         const totalQuestions = await this.questionRepository.count({ where: { category_id: uuid } });

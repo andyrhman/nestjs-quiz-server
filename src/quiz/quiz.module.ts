@@ -7,15 +7,18 @@ import { Score } from './models/score.entity';
 import { AuthModule } from 'src/auth/auth.module';
 import { CategoryModule } from 'src/category/category.module';
 import { UserQuestion } from './models/answered.entity';
+import { QuizTimerService } from './timer.service';
+import { TimeLimit } from './models/time.entity';
+import { UserQuestionTimer } from './models/user-timer.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Question, Score, UserQuestion]),
+    TypeOrmModule.forFeature([Question, Score, UserQuestion, TimeLimit, UserQuestionTimer]),
     AuthModule,
     CategoryModule
   ],
   controllers: [QuizController],
-  providers: [QuizService],
+  providers: [QuizService, QuizTimerService],
   exports: []
 })
 export class QuizModule { }

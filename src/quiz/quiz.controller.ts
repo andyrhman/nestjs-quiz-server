@@ -7,6 +7,7 @@ import { Request } from 'express';
 import { isUUID } from 'class-validator';
 import { JoiValidationPipe } from 'src/common/validation.pipe';
 import { QuestionDTO } from './validation/quiz-create.dto';
+import { TimeLimit } from './models/time.entity';
 
 @Controller('quiz')
 export class QuizController {
@@ -26,7 +27,7 @@ export class QuizController {
     @Post(':id')
     async create(
         @Param('id') id: string,
-        @Body() body: Question[]
+        @Body() body: { time_limit: number, questions: Question[] }
     ) {
         if (!isUUID(id)) {
             throw new BadRequestException('Invalid UUID format');
@@ -36,22 +37,21 @@ export class QuizController {
         if (!category) {
             throw new BadRequestException('No questions found');
         }
-
-        // const questions = body.map(question => ({
-        //     ...question,
-        //     category_id: category.id,
-        // }));
         let questions = [];
+        let timeLimit = new TimeLimit();
+        timeLimit.time_limit = body.time_limit;
+        timeLimit.category_id = category.id;
+        timeLimit.category = category;
 
-        for (let i = 0; i < body.length; i++) {
+        for (let i = 0; i < body.questions.length; i++) {
             let question = {
-                ...body[i],
+                ...body.questions[i],
                 category_id: category.id,
             };
             questions.push(question);
         }
 
-
+        await this.quizService.createTimeLimit(timeLimit);
         return this.quizService.createQ(questions);
     }
 
@@ -75,22 +75,47 @@ export class QuizController {
         });
     }
 
-    // * Get question by the id
-    @Get(':id/:category')
+    // * Get questions by the category
+    @Get(':category')
     async findOne(
-        @Param('id') id: string,
         @Param('category') category: string
     ) {
         if (!isUUID(category)) {
             throw new BadRequestException();
         }
 
-        const find = await this.quizService.findOne({ id: id, category_id: category });
+        const find = await this.quizService.find({ category_id: category });
 
         if (!find) {
             throw new NotFoundException();
         }
-        return this.quizService.findOne({ id: id, category_id: category }, ['category']);
+        return find;
+    }
+
+    // * Start the countdown
+    @Post('start-timer/:id')
+    async startTimer(
+        @Req() request: Request,
+        @Param('id') id: string
+    ) {
+        const userId = await this.authService.userId(request);
+        return this.quizService.startTimer(userId, id);
+    }    
+
+    //* Answering the question without pagination
+    @Post(':id/answer')
+    async answer(
+        @Req() request: Request,
+        @Param('id') id: string,
+        @Body() answers: { question_no: string, answer: string }[]
+    ) {
+        const category = await this.categoryService.findOne({ id });
+
+        if (!category) {
+            throw new BadRequestException('No questions found');
+        }
+        const userId = await this.authService.userId(request);
+        return this.quizService.answerQuestions(userId, id, answers);
     }
 
     @Put(':id/:category')
@@ -119,22 +144,6 @@ export class QuizController {
         @Param('id') id: number
     ) {
         return this.quizService.deleteQ(id);
-    }
-
-    //* Answering the question without pagination
-    @Post(':id/answer')
-    async answer(
-        @Req() request: Request,
-        @Param('id') id: string,
-        @Body() answers: { question_no: string, answer: string }[]
-    ) {
-        const category = await this.categoryService.findOne({ id });
-
-        if (!category) {
-            throw new BadRequestException('No questions found');
-        }
-        const userId = await this.authService.userId(request);
-        return this.quizService.answerQuestions(userId, id, answers);
     }
 
     // * Answer the questions
