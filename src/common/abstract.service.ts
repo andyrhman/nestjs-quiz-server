@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { PaginatedResult } from './paginated-result.interface';
 
@@ -11,7 +11,7 @@ export abstract class AbstractService {
 
     // Find all user in the DB.
     async all(relations = []): Promise<any[]> {
-        return await this.repository.find({relations});
+        return await this.repository.find({ relations });
     }
 
     async paginate(page = 1, relations = []): Promise<PaginatedResult> {
@@ -25,6 +25,34 @@ export abstract class AbstractService {
 
         return {
             data: data,
+            meta: {
+                total,
+                page,
+                last_page: Math.ceil(total / take)
+            }
+        }
+    }
+
+    async showQuestion(options = {}, page = 1, relations = []): Promise<PaginatedResult> {
+        const take = 1;
+
+        if (page < 1) {
+            throw new BadRequestException('Page must be greater than 0');
+        }
+
+        const [data, total] = await this.repository.findAndCount({
+            where: options,
+            take,
+            skip: (page - 1) * take,
+            relations
+        });
+
+        return {
+            data: data.map(d => {
+                const { correctAnswer, category_id, ...data } = d;
+
+                return data;
+            }),
             meta: {
                 total,
                 page,

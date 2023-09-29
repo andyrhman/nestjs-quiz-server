@@ -54,6 +54,10 @@ export class QuizService extends AbstractService {
         return timer;
     }    
 
+    async findTimerByCategory(options, relations = []) {
+        return this.quizTimeRepository.findOne({ where: options, relations });
+    }
+
     //* Answering the question without pagination
     // ? https://www.phind.com/search?cache=xw1i7ijdug6q25tysmf54fo3
     async answerQuestions(userId: string, uuid: string, answers: { question_no: string, answer: string }[]): Promise<any> {

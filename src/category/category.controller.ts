@@ -10,6 +10,11 @@ export class CategoryController {
         private categoryService: CategoryService
     ) {}
 
+    @Get()
+    async all(){
+        return this.categoryService.all();
+    }
+
     @Post()
     async create(
         @Body(new JoiValidationPipe(categoryValidation)) body: any

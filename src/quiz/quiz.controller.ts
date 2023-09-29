@@ -5,7 +5,6 @@ import { Question } from './models/quiz.entity';
 import { AuthService } from 'src/auth/auth.service';
 import { Request } from 'express';
 import { isUUID } from 'class-validator';
-import { JoiValidationPipe } from 'src/common/validation.pipe';
 import { QuestionDTO } from './validation/quiz-create.dto';
 import { TimeLimit } from './models/time.entity';
 
@@ -78,13 +77,14 @@ export class QuizController {
     // * Get questions by the category
     @Get(':category')
     async findOne(
-        @Param('category') category: string
+        @Param('category') category: string,
+        @Query('page') page: number = 1
     ) {
         if (!isUUID(category)) {
             throw new BadRequestException();
         }
 
-        const find = await this.quizService.find({ category_id: category });
+        const find = await this.quizService.showQuestion({ category_id: category }, page);
 
         if (!find) {
             throw new NotFoundException();
@@ -92,15 +92,36 @@ export class QuizController {
         return find;
     }
 
-    // * Start the countdown
+    // * Start the countdown and show the questions
     @Post('start-timer/:id')
     async startTimer(
         @Req() request: Request,
-        @Param('id') id: string
+        @Param('id') id: string,
+        @Query('page') page: number = 1
     ) {
+        if (!isUUID(id)) {
+            throw new BadRequestException();
+        }
         const userId = await this.authService.userId(request);
-        return this.quizService.startTimer(userId, id);
-    }    
+
+        const find = await this.quizService.showQuestion({ category_id: id }, page);
+
+        if (!find) {
+            throw new NotFoundException();
+        }
+
+        await this.quizService.startTimer(userId, id);
+
+        return find;
+    }
+
+    // * Find the timer by the category
+    @Get('get-timer/:id')
+    async getTimer(
+        @Param('id') id: string
+    ){
+        return this.quizService.findTimerByCategory({category_id: id}, ['category'])
+    }
 
     //* Answering the question without pagination
     @Post(':id/answer')
