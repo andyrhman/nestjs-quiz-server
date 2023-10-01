@@ -92,7 +92,7 @@ export class AuthController {
         });
         response.status(200);
 
-        return user;
+        return jwt;
     }
 
     @UseGuards(AuthGuard)

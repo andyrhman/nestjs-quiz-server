@@ -7,6 +7,7 @@ import { Request } from 'express';
 import { isUUID } from 'class-validator';
 import { QuestionDTO } from './validation/quiz-create.dto';
 import { TimeLimit } from './models/time.entity';
+import { ScoreService } from './score.service';
 
 @Controller('quiz')
 export class QuizController {
@@ -14,7 +15,35 @@ export class QuizController {
         private quizService: QuizService,
         private categoryService: CategoryService,
         private authService: AuthService,  // Inject the AuthService
+        private scoreService: ScoreService
     ) { }
+
+    // * Find authenticated user score
+    /* 
+    !!! ATTENTION IF YOU HAVE THE ERROR THAT SAYS
+    !   {
+    !       "message": "Bad Request",
+    !       "statusCode": 400
+    !   }
+    ?   OR
+    !    {
+    !       "message": "Invalid",
+    !       "error": "Bad Request",
+    !       "statusCode": 400
+    !    }
+    * IT'S BECUASE THERE'S A BUG IN NEST JS THIS VERSION
+    ! YOU MUST PUT IT THE CODE ON TOP
+
+    TODO: EXPLANATION FOR THIS CODE YOU CAN GET IT FROM THIS LINK...
+    ? https://www.phind.com/search?cache=e95ndetw7t5a9rdtpm8davds
+    */
+    @Get('scores')
+    async score(
+        @Req() request: Request,
+    ) {
+        const user = await this.authService.userId(request)
+        return this.scoreService.findUserScore({ user_id: user })
+    }
 
     // * Get all questions and it relasions with category
     @Get()
@@ -81,7 +110,7 @@ export class QuizController {
         @Query('page') page: number = 1
     ) {
         if (!isUUID(category)) {
-            throw new BadRequestException();
+            throw new BadRequestException("Invalid");
         }
 
         const find = await this.quizService.showQuestion({ category_id: category }, page);
@@ -100,10 +129,12 @@ export class QuizController {
         @Query('page') page: number = 1
     ) {
         if (!isUUID(id)) {
-            throw new BadRequestException();
+            throw new BadRequestException("Invalid");
         }
+        // * find user
         const userId = await this.authService.userId(request);
 
+        // * find question by the category
         const find = await this.quizService.showQuestion({ category_id: id }, page);
 
         if (!find) {
@@ -119,8 +150,8 @@ export class QuizController {
     @Get('get-timer/:id')
     async getTimer(
         @Param('id') id: string
-    ){
-        return this.quizService.findTimerByCategory({category_id: id}, ['category'])
+    ) {
+        return this.quizService.findTimerByCategory({ category_id: id }, ['category'])
     }
 
     //* Answering the question without pagination
@@ -139,6 +170,7 @@ export class QuizController {
         return this.quizService.answerQuestions(userId, id, answers);
     }
 
+    // * Updating the question
     @Put(':id/:category')
     async update(
         @Param('id') id: string,
@@ -146,7 +178,7 @@ export class QuizController {
         @Body() body: Question
     ) {
         if (!isUUID(category)) {
-            throw new BadRequestException();
+            throw new BadRequestException("Invalid");
         }
 
         const find = await this.quizService.findOne({ id: id, category_id: category });

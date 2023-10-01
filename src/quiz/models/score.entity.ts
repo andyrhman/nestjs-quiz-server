@@ -4,7 +4,7 @@ import {
     OneToMany,
     Entity,
     JoinColumn,
-    ManyToMany,
+    ManyToOne,
 } from 'typeorm';
 import { Question } from './quiz.entity';
 import { User } from 'src/user/models/user.entity';
@@ -15,7 +15,7 @@ export class Score{
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @Column({name: "user_id", nullable: true}) // Make this field optional
+    @Column({name: "user_id"}) // Make this field optional
     user_id: string;
 
     @Column({name: "category_id"})
@@ -31,7 +31,7 @@ export class Score{
     @JoinColumn({name: "category_id"})
     category: Category[];
 
-    @ManyToMany(() => User)
+    @ManyToOne(() => User, (user) => user.scores)
     @JoinColumn({name: "user_id"})
-    user: User
+    user: User;
 }

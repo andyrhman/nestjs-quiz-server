@@ -34,6 +34,11 @@ export class QuizService extends AbstractService {
 
     async startTimer(userId: string, categoryId: string): Promise<any> {
         let score = await this.scoreRepository.findOne({ where: { category_id: categoryId, user_id: userId } });
+
+        if (score) {
+            throw new BadRequestException('Questions already answered')
+
+        }
     
         if (!score) {
             score = this.scoreRepository.create();
@@ -52,7 +57,7 @@ export class QuizService extends AbstractService {
         }
     
         return timer;
-    }    
+    }
 
     async findTimerByCategory(options, relations = []) {
         return this.quizTimeRepository.findOne({ where: options, relations });
