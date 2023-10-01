@@ -13,8 +13,8 @@ export class ScoreService extends AbstractService {
     }
     
 
-    async findUserScore(options): Promise<any> {
-        const scores = await this.scoreRepository.find({ where: options });
+    async findUserScore(options, relations = []): Promise<any> {
+        const scores = await this.scoreRepository.find({ where: options, relations });
         return {
             total: scores.length,
             scores: scores

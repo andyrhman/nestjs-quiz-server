@@ -27,9 +27,9 @@ export class Score{
     @Column({ default: false })
     completed: boolean;
 
-    @OneToMany(() => Category, category => category.score)
+    @ManyToOne(() => Category, category => category.score, { eager: true })
     @JoinColumn({name: "category_id"})
-    category: Category[];
+    category: Category;    
 
     @ManyToOne(() => User, (user) => user.scores)
     @JoinColumn({name: "user_id"})

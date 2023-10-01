@@ -18,7 +18,7 @@ export class QuizController {
         private scoreService: ScoreService
     ) { }
 
-    // * Find authenticated user score
+    // * Find authenticated user score lists
     /* 
     !!! ATTENTION IF YOU HAVE THE ERROR THAT SAYS
     !   {
@@ -42,7 +42,18 @@ export class QuizController {
         @Req() request: Request,
     ) {
         const user = await this.authService.userId(request)
-        return this.scoreService.findUserScore({ user_id: user })
+        return this.scoreService.findUserScore({ user_id: user }, ['category'])
+    }
+
+    // * User Answer Score
+    @Get('answer-score/:id')
+    async answerScore(
+        @Req() request: Request,
+        @Param('id') id: string,
+
+    ) {
+        const user = await this.authService.userId(request)
+        return this.scoreService.findOne({ user_id: user, category_id: id })
     }
 
     // * Get all questions and it relasions with category

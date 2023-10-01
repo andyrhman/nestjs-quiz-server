@@ -13,8 +13,6 @@ export class Category{
     @OneToMany(() => Classroom, (classroom) => classroom.category)
     classroom: Classroom[];
 
-    @ManyToOne(() => Score, (score) => score.category, {
-        createForeignKeyConstraints: false,
-    })
-    score: Score;
+    @OneToMany(() => Score, (score) => score.category)
+    score: Score[];
 }
