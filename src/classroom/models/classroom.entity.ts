@@ -1,20 +1,29 @@
+import { Column, Entity, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { ClassroomSession } from "src/classroom-session/models/classroom-session.models";
 import { User } from "src/user/models/user.entity";
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
-import { Category } from "../../category/models/category.entity";
 
 @Entity('classrooms')
-export class Classroom{
-    @PrimaryGeneratedColumn()
-    id: number;
+export class Classroom {
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
 
     @Column()
     name: string;
 
-    @Column({name: "category_id"})
-    category_id: string;
+    @OneToMany(() => ClassroomSession, (classroom_session) => classroom_session.classroom)
+    classroom_session: ClassroomSession[];
 
-    @ManyToOne(() => Category)
-    @JoinColumn({name: "category_id"})
-    category: Category;
-
+    @ManyToMany(() => User, (user) => user.classrooms)
+    @JoinTable({
+        name: "user_classrooms",
+        joinColumn: {
+            name: "classroom_id",
+            referencedColumnName: "id",
+        },
+        inverseJoinColumn: {
+            name: "user_id",
+            referencedColumnName: "id",
+        },
+    })
+    users: User[];
 }

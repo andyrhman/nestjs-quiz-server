@@ -1,0 +1,21 @@
+services:
+  quizza-server:
+    container_name: quizza-server
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8000:8000"
+    volumes:
+      - ".:/var/quizza-server"
+
+  quizza-db:
+    container_name: quizza-db
+    image: postgres:latest
+    restart: always
+    env_file:
+      - ./config/database.env
+    volumes:
+      - ./.pgdata:/var/lib/postgresql/data
+    ports:
+      - 54322:5432

@@ -1,101 +1,75 @@
 import { Request } from 'express';
-import { BadRequestException, Body, Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, NotFoundException, Param, Post, Req, UseGuards } from '@nestjs/common';
 import { ClassroomService } from './classroom.service';
-import { UserClassroomService } from './userclassroom.service';
 import { AuthService } from 'src/auth/auth.service';
 import { UserService } from 'src/user/user.service';
 import { AuthGuard } from 'src/auth/auth.guard';
+import { isUUID } from 'class-validator';
 
 @Controller('classroom')
 export class ClassroomController {
     constructor(
         private classroomService: ClassroomService,
-        private userClassroomService: UserClassroomService,
         private authService: AuthService,
         private userService: UserService
     ) { }
 
     // * Get all classrooms and the users
-    @Get()
-    async all() {
-        return this.userClassroomService.all(['user', 'classroom']);
-    }
+    // @Get()
+    // async all() {
+    //     return this.userClassroomService.all(['user', 'classroom']);
+    // }
 
     // * Create classroom and assign the users
     @Post()
     async create(
         @Body() body: any
     ) {
-        const checkClassroom = await this.classroomService.findOne({name: body.name});
+        const checkClassroom = await this.classroomService.findOne({ name: body.name });
 
         if (checkClassroom) {
-            throw new BadRequestException(`Classroom with the name '${body.name}' already exists`)
+            throw new BadRequestException(`Classroom with the name '${body.name}' already exists`);
         };
 
-        const classroom = await this.classroomService.create({
+        return this.classroomService.create({
             name: body.name,
-            category_id: body.category_id
-        })
-
-        let class_id = classroom.id;
-
-        let classrooms = [];
-
-        for (let i = 0; i < body.classrooms.length; i++) {
-            let classr = {
-                ...body.classrooms[i],
-                classroom_id: class_id
-            };
-            classrooms.push(classr);
-        }
-
-        await this.userClassroomService.createUserClassroom(classrooms);
-
-        return {
-            message: "Created successfully"
-        }
+            users: body.users.map((id: any) => {
+                return {
+                    id: id
+                };
+            })
+        });
     }
 
-    // * Assign user to a classroom
-    @Post(':id')
-    async assign(
-        @Param('id') id: number,
-        @Body() body: any
+    // * Assign a user to a specific classroom
+    @Post(':classroomId/users')
+    async assignUserToClassroom(
+        @Param('classroomId') classroomId: string,
+        @Body('user_id') user_id: string,
     ) {
-        // * Initialize an empty array to hold the UserClassroom entities
-        let classrooms = [];
+        if (!isUUID(classroomId)) {
+            throw new BadRequestException('Invalid UUID format');
+        }
+        
+        const classroom = await this.classroomService.findOne({ id: classroomId }, ['users']);
 
-        // * Loop through each user in the classrooms array from the request body
-
-        for (let i = 0; i < body.classrooms.length; i++) {
-
-            // * find an existing UserClassroom entity with the provided user_id
-
-            const user = await this.userClassroomService.findOne({ user_id: body.classrooms[i].user_id, classroom_id: id }, ['user']);
-
-            // ? If a UserClassroom entity is found and the user_id matches the provided user_id, throw an exception
-            
-            if (user && user.user_id === body.classrooms[i].user_id) {
-                throw new BadRequestException(`User with the name "${user.user.fullname}" already exists in the classroom`)
-            }
-
-            
-            // ? Create a new UserClassroom object with the user data and the classroom_id
-            let classr = {
-                ...body.classrooms[i],
-                classroom_id: id
-            };
-
-            // * Add the new UserClassroom object to the classrooms array
-            
-            classrooms.push(classr);
+        if (!classroom) {
+            throw new NotFoundException('Classroom not found');
         }
 
-        await this.userClassroomService.createUserClassroom(classrooms);
+        const user = await this.userService.findOne({ id: user_id });
 
-        return {
-            message: "Successfully asigned"
+        if (user) {
+            throw new BadRequestException('User already exists');
         }
+
+        if (!user) {
+            throw new NotFoundException('User not found');
+        }
+
+        classroom.users.push(user);
+
+        return this.classroomService.create(classroom);
     }
 
     // * Get authenticated user clasroom

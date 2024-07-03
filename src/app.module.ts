@@ -8,6 +8,7 @@ import { CommonModule } from './common/common.module';
 import { AuthModule } from './auth/auth.module';
 import { CategoryModule } from './category/category.module';
 import { ClassroomModule } from './classroom/classroom.module';
+import { ClassroomSessionModule } from './classroom-session/classroom-session.module';
 
 @Module({
   imports: [
@@ -29,7 +30,8 @@ import { ClassroomModule } from './classroom/classroom.module';
     CommonModule,
     AuthModule,
     CategoryModule,
-    ClassroomModule
+    ClassroomModule,
+    ClassroomSessionModule,
   ],
 })
 export class AppModule {}

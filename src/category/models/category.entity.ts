@@ -10,9 +10,6 @@ export class Category{
     @Column()
     name: string;
 
-    @OneToMany(() => Classroom, (classroom) => classroom.category)
-    classroom: Classroom[];
-
     @OneToMany(() => Score, (score) => score.category)
     score: Score[];
 }
