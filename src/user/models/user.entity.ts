@@ -2,8 +2,9 @@
 import { Exclude } from 'class-transformer';
 import { Classroom } from 'src/classroom/models/classroom.entity';
 import { Score } from 'src/quiz/models/score.entity';
-import { BeforeInsert, BeforeUpdate, Column, CreateDateColumn, Entity, ManyToMany, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn} from 'typeorm';
+import { BeforeInsert, BeforeUpdate, Column, CreateDateColumn, Entity, JoinColumn, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn} from 'typeorm';
 import { Token } from './token.entity';
+import { Role } from 'src/role/models/role.entity';
 
 @Entity('users')
 export class User {
@@ -40,6 +41,10 @@ export class User {
 
   @OneToMany(() => Token, (cart) => cart.user)
   verify: Token[];  
+
+  @ManyToOne(() => Role)
+  @JoinColumn({name: "role_id"})
+  role: Role;
 
   @BeforeInsert()
   @BeforeUpdate()

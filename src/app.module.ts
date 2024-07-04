@@ -12,6 +12,8 @@ import { ClassroomSessionModule } from './classroom-session/classroom-session.mo
 import { RoleModule } from './role/role.module';
 import { PermissionModule } from './permission/permission.module';
 import { ClassroomTokenModule } from './classroom-token/classroom-token.module';
+import { MailerModule } from '@nestjs-modules/mailer';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports: [
@@ -28,6 +30,18 @@ import { ClassroomTokenModule } from './classroom-token/classroom-token.module';
       autoLoadEntities: true, //delete if production
       synchronize: true,
     }),
+    MailerModule.forRoot({
+      transport: {
+        // * Let docker know nodemailer run in local.
+        // ? https://www.phind.com/search?cache=rrc34g0tz9oxk331skvds3di
+        host: 'host.docker.internal',
+        port: 1025,
+      },
+      defaults: {
+        from: 'service@mail.com'
+      }
+    }),
+    EventEmitterModule.forRoot(),
     QuizModule,
     UserModule,
     CommonModule,
@@ -40,4 +54,4 @@ import { ClassroomTokenModule } from './classroom-token/classroom-token.module';
     ClassroomTokenModule,
   ],
 })
-export class AppModule {}
+export class AppModule { }
