@@ -1,4 +1,4 @@
-import { registerDTO } from './validation/register.dto';
+import { RegisterDto } from './validation/register.dto';
 import { BadRequestException, Body, ClassSerializerInterceptor, Controller, Get, Post, Req, Res, UseGuards, UseInterceptors } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from 'src/user/user.service';
@@ -19,9 +19,15 @@ export class AuthController {
 
     @Post('register')
     async register(
-        @Body(new JoiValidationPipe(registerDTO)) body: any,
+        @Body() body: RegisterDto,
         @Res({ passthrough: true }) response: Response
     ) {
+        const { confirm_password, ...data } = body;
+
+        if (body.password !== body.confirm_password) {
+            throw new BadRequestException("Password do not match.");
+        }
+
         const existingEmail = await this.userService.findOne({ email: body.email });
 
         if (existingEmail) {
@@ -37,19 +43,12 @@ export class AuthController {
         // Hash Password
         const hashPassword = await argon2.hash(body.password);
 
-        const newUser = await this.userService.create({
-            fullname: body.fullname,
-            username: body.username,
-            email: body.email,
-            password: hashPassword,
+        const user = await this.userService.create({
+            ...data,
+            username: body.username.toLowerCase(),
+            email: body.email.toLowerCase(),
+            password: hashPassword
         });
-
-        response.status(200);
-        return {
-            fullname: newUser.fullname,
-            username: newUser.username,
-            email: newUser.email,
-        };
     }
 
     @Post('login')

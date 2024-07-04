@@ -15,12 +15,14 @@ export class ClassroomController {
     ) { }
 
     // * Get all classrooms and the users
-    // @Get()
-    // async all() {
-    //     return this.userClassroomService.all(['user', 'classroom']);
-    // }
+    @UseGuards(AuthGuard)
+    @Get()
+    async all() {
+        return this.classroomService.all(['users']);
+    }
 
     // * Create classroom and assign the users
+    @UseGuards(AuthGuard)
     @Post()
     async create(
         @Body() body: any
@@ -42,6 +44,7 @@ export class ClassroomController {
     }
 
     // * Assign a user to a specific classroom
+    @UseGuards(AuthGuard)
     @Post(':classroomId/users')
     async assignUserToClassroom(
         @Param('classroomId') classroomId: string,
@@ -80,6 +83,6 @@ export class ClassroomController {
     ) {
         const id = await this.authService.userId(request);
 
-        return this.userService.findOne({ id }, ['classroom']);
+        return this.userService.findOne({ id }, ['classrooms']);
     }
 }

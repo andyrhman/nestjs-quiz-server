@@ -9,6 +9,9 @@ import { AuthModule } from './auth/auth.module';
 import { CategoryModule } from './category/category.module';
 import { ClassroomModule } from './classroom/classroom.module';
 import { ClassroomSessionModule } from './classroom-session/classroom-session.module';
+import { RoleModule } from './role/role.module';
+import { PermissionModule } from './permission/permission.module';
+import { ClassroomTokenModule } from './classroom-token/classroom-token.module';
 
 @Module({
   imports: [
@@ -32,6 +35,9 @@ import { ClassroomSessionModule } from './classroom-session/classroom-session.mo
     CategoryModule,
     ClassroomModule,
     ClassroomSessionModule,
+    RoleModule,
+    PermissionModule,
+    ClassroomTokenModule,
   ],
 })
 export class AppModule {}
