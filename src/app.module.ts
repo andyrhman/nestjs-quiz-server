@@ -14,6 +14,8 @@ import { PermissionModule } from './permission/permission.module';
 import { ClassroomTokenModule } from './classroom-token/classroom-token.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { APP_GUARD } from '@nestjs/core';
+import { PermissionGuard } from './permission/permission.guard';
 
 @Module({
   imports: [
@@ -53,5 +55,11 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     PermissionModule,
     ClassroomTokenModule,
   ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: PermissionGuard
+    }
+  ]
 })
 export class AppModule { }

@@ -1,4 +1,4 @@
-import { BadRequestException, Body, ClassSerializerInterceptor, ConflictException, Controller, Delete, Get, NotFoundException, Param, Post, Put, Query, Req, UseGuards, UseInterceptors } from '@nestjs/common';
+import { BadRequestException, Body, ClassSerializerInterceptor, ConflictException, Controller, Delete, Get, NotFoundException, Param, Post, Put, Query, Req, Res, UseGuards, UseInterceptors } from '@nestjs/common';
 import { UserService } from './user.service';
 import { RoleService } from 'src/role/role.service';
 import { AuthService } from 'src/auth/auth.service';
@@ -6,12 +6,12 @@ import { User } from './models/user.entity';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { HasPermission } from 'src/permission/decorator/permission.decorator';
 import { UserCreateDto } from './dto/user-create.dto';
-import { Request } from 'express';
+import { Response, Request } from 'express';
 import { isUUID } from 'class-validator';
 import * as argon2 from 'argon2';
 
 @UseInterceptors(ClassSerializerInterceptor)
-@Controller('user')
+@Controller('users')
 export class UserController {
     constructor(
         private userService: UserService,
@@ -19,6 +19,7 @@ export class UserController {
         private authService: AuthService
     ) { }
 
+    // * Search User
     @Get('userf')
     async findUsersRegister(@Query('search') search: string): Promise<User[]> {
         // Check for malicious characters in the search input
@@ -35,17 +36,22 @@ export class UserController {
         return users;
     }
 
+    // * Get All Users 
     @Get()
     @UseGuards(AuthGuard)
     @HasPermission('users')
-    async all(@Query('page') page: number = 1) {
-        return await this.userService.paginate(page, ['role']);
+    async all() {
+        return await this.userService.all(['role']);
     }
 
+    // * Admin create user
     @Post()
     @UseGuards(AuthGuard)
     @HasPermission('users')
-    async create(@Body() body: UserCreateDto): Promise<User> {
+    async create(
+        @Body() body: UserCreateDto,
+        @Res({ passthrough: true }) response: Response
+    ): Promise<User> {
         const password = await argon2.hash('123456');
 
         // Check if the username or email already exists
@@ -58,7 +64,9 @@ export class UserController {
             throw new BadRequestException('Username or email already exists');
         }
 
+        response.status(201);
         return this.userService.create({
+            fullname: body.fullname,
             username: body.username,
             email: body.email,
             password,
@@ -66,6 +74,7 @@ export class UserController {
         });
     }
 
+    // * Admin get user by id
     @Get(':id')
     @UseGuards(AuthGuard)
     @HasPermission('users')
@@ -83,18 +92,23 @@ export class UserController {
         return search;
     }
 
-    // User update their own info
+    // * User update their own info
     @Put('info')
     @UseGuards(AuthGuard)
     async updateInfo(
         @Req() request: Request,
         @Body() body: any,
+        @Res({ passthrough: true }) response: Response
     ) {
         const id = await this.authService.userId(request);
         const existingUser = await this.userService.findOne({ id });
 
         if (!existingUser) {
             throw new NotFoundException('User not found');
+        }
+
+        if (body.fullname && body.fullname !== existingUser.fullname) {
+            existingUser.fullname = body.fullname;
         }
 
         if (body.email && body.email !== existingUser.email) {
@@ -113,18 +127,25 @@ export class UserController {
             existingUser.username = body.username;
         }
 
+        response.status(202);
+
         await this.userService.update(id, existingUser);
 
         return this.userService.findOne({ id });
     }
 
-    // User update their own password
+    // * User update their own password
     @Put('password')
     @UseGuards(AuthGuard)
     async updatePassword(
         @Req() request: Request,
         @Body() body: any,
+        @Res({ passthrough: true }) response: Response
     ) {
+        if (!body.password || !body.confirm_password) {
+            throw new BadRequestException();
+        }
+
         if (body.password !== body.confirm_password) {
             throw new BadRequestException("Password do not match.");
         }
@@ -137,6 +158,8 @@ export class UserController {
             password: hashPassword
         });
 
+        response.status(202);
+
         return this.userService.findOne({ id });
     }
 
@@ -147,6 +170,7 @@ export class UserController {
     async update(
         @Param('id') id: string,
         @Body() body: any,
+        @Res({ passthrough: true }) response: Response
     ) {
         if (!isUUID(id)) {
             throw new BadRequestException('Invalid UUID format');
@@ -158,7 +182,11 @@ export class UserController {
             throw new NotFoundException('User not found');
         }
 
-        const { username, email, role_id } = body;
+        const { fullname, username, email, role_id } = body;
+
+        if (fullname && fullname !== existingUser.fullname) {
+            existingUser.fullname = fullname;
+        }
 
         // Check if username already exists and is different from the existing one
         if (username && username !== existingUser.username) {
@@ -188,21 +216,25 @@ export class UserController {
         }
 
         // Perform the update
+        response.status(202);
+
         await this.userService.update(id, existingUser);
 
         return this.userService.findOne({ id });
     }
 
+    // * Delete User
     @Delete(':id')
     @UseGuards(AuthGuard)
     @HasPermission('users')
     async delete(
         @Param('id') id: string,
+        @Res({ passthrough: true }) response: Response
     ) {
         await this.userService.delete(id);
 
-        return {
-            message: "User deleted sucessfully"
-        }
+        response.status(204);
+
+        return null;
     }
 }

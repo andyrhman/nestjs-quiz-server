@@ -1,4 +1,4 @@
-import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import { BadRequestException, CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
 import { AuthService } from 'src/auth/auth.service';
@@ -19,25 +19,28 @@ export class PermissionGuard implements CanActivate {
   async canActivate(
     context: ExecutionContext,
   ){
-
-    const access = this.reflector.get<string>('access', context.getHandler());
-    if (!access) {
-      return true;
+    try {
+      const access = this.reflector.get<string>('access', context.getHandler());
+      if (!access) {
+        return true;
+      }
+      
+      const request = context.switchToHttp().getRequest();
+  
+      const id = await this.authService.userId(request);
+  
+      const user: User = await this.userService.findOne({id}, ['role']);
+  
+      const role: Role = await this.roleService.findOne({id: user.role.id}, ['permissions']);
+  
+      // Delete this if you want only permissions like @HasPermission('view_users') or @HasPermission('edit_users')
+      if (request.method === 'GET') {
+        return role.permissions.some(p => (p.name === `view_${access}`) || (p.name === `edit_${access}`));
+      }
+  
+      return role.permissions.some(p => p.name === `edit_${access}`);
+    } catch (error) {
+      throw new BadRequestException();
     }
-    
-    const request = context.switchToHttp().getRequest();
-
-    const id = await this.authService.userId(request);
-
-    const user: User = await this.userService.findOne({id}, ['role']);
-
-    const role: Role = await this.roleService.findOne({id: user.role.id}, ['permissions']);
-
-    // Delete this if you want only permissions like @HasPermission('view_users') or @HasPermission('edit_users')
-    if (request.method === 'GET') {
-      return role.permissions.some(p => (p.name === `view_${access}`) || (p.name === `edit_${access}`));
-    }
-
-    return role.permissions.some(p => p.name === `edit_${access}`);
   }
 }
