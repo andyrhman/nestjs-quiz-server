@@ -16,7 +16,7 @@ const bootstrap = async () => {
         'view_classroom_code', 'edit_classroom_code',
         'view_classroom_session', 'edit_classroom_session',
         'view_learning_material', 'edit_learning_material',
-        'view_learning_progress', 'edit _learning_progress',
+        'view_learning_progress', 'edit_learning_progress',
         'view_class_discussion', 'edit_class_discussion',
         'view_class_discussion_comment', 'edit_class_discussion_comment',
         'view_class_discussion_likes', 'edit_class_discussion_likes',
@@ -36,33 +36,30 @@ const bootstrap = async () => {
     // Define roles with specific permissions
     const adminPermissions = permissions; // Admin gets all permissions
 
+    // Filter the permission that 
+    // You do not include the permissions in the database
     const teacherPermissions = permissions.filter(perm => ![
-        'view_classroom', 'edit_classroom',
-        'view_classroom_code', 'edit_classroom_code',
-        'view_classroom_session', 'edit_classroom_session',
-        'view_learning_material', 'edit_learning_material',
-        'view_learning_progress', 'edit _learning_progress',
-        'view_class_discussion', 'edit_class_discussion',
-        'view_class_discussion_comment', 'edit_class_discussion_comment',
-        'view_class_discussion_likes', 'edit_class_discussion_likes',
-        'view_assignment', 'edit_assignment',
-        'view_question', 'edit_question',
-        'view_chat', 'edit_chat',
+        'edit_users',
+        'edit_student_info',
+        'edit_class_discussion_comment',
+        'edit_class_discussion_likes',
+        'edit_chat',
     ].includes(perm.name)); // Teacher gets specific permissions
 
     const studentPermissions = permissions.filter(perm => ![
-        'view_student_info', 'edit_student_info',
-        'view_classroom',
-        'view_classroom_code',
-        'view_classroom_session',
-        'view_learning_material',
-        'view_learning_progress',
-        'view_class_discussion',
-        'view_class_discussion_comment',
-        'view_class_discussion_likes',
-        'view_assignment',
-        'view_question',
-        'view_chat',
+        'edit_users',
+        'edit_student_info',
+        'edit_classroom',
+        'edit_classroom_code',
+        'edit_classroom_session',
+        'edit_learning_material',
+        'edit_learning_progress',
+        'edit_class_discussion',
+        'edit_class_discussion_comment',
+        'edit_class_discussion_likes',
+        'edit_chat',
+        'edit_assignment',
+        'edit_question',
     ].includes(perm.name)); // Student gets specific permissions
 
     // Create and save roles

@@ -23,7 +23,7 @@ export class Token {
     @Column({ default: false }) // Default to false, indicating token is not used
     used: boolean;
 
-    @ManyToOne(() => User, (user) => user.verify)
+    @ManyToOne(() => User, (user) => user.verify, {cascade: true})
     @JoinColumn({name: "user_id"})
     user: User;
 }
