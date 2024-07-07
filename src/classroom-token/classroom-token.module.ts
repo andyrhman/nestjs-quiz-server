@@ -15,6 +15,7 @@ import { UserModule } from 'src/user/user.module';
     UserModule
   ],
   providers: [ClassroomTokenService],
-  controllers: [ClassroomTokenController]
+  controllers: [ClassroomTokenController],
+  exports: [ClassroomTokenService]
 })
 export class ClassroomTokenModule {}

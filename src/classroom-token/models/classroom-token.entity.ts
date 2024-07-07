@@ -9,10 +9,10 @@ export class ClassroomToken {
     @Column()
     key: string;
 
-    @Column({name: "classroom_id"})
+    @Column({name: "classroom_id"}) 
     classroom_id: string;
 
-    @ManyToOne(() => Classroom, (classroom) => classroom.class_token)
+    @ManyToOne(() => Classroom, (classroom) => classroom.class_token, { onDelete: 'CASCADE' })
     @JoinColumn({name: "classroom_id"})
     classroom: Classroom;
 }

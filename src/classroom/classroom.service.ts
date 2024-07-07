@@ -11,4 +11,14 @@ export class ClassroomService extends AbstractService {
     ) {
         super(classroomRepository)
     }
+
+    public generateToken(length: number): string {
+        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        let token = '';
+        for (let i = 0; i < length; i++) {
+            const randomIndex = Math.floor(Math.random() * characters.length);
+            token += characters[randomIndex];
+        }
+        return token;
+    }
 }

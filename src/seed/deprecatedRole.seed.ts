@@ -36,7 +36,17 @@ const bootstrap = async () => {
     // Define roles with specific permissions
     const adminPermissions = permissions; // Admin gets all permissions
 
-    const userPermissions = permissions.filter(perm => ![
+    // Filter the permission that 
+    // You do not include the permissions in the database
+    const teacherPermissions = permissions.filter(perm => ![
+        'edit_users',
+        'edit_student_info',
+        'edit_class_discussion_comment',
+        'edit_class_discussion_likes',
+        'edit_chat',
+    ].includes(perm.name)); // Teacher gets specific permissions
+
+    const studentPermissions = permissions.filter(perm => ![
         'edit_users',
         'edit_student_info',
         'edit_classroom',
@@ -59,10 +69,20 @@ const bootstrap = async () => {
     });
 
     await roleService.create({
-        name: 'User',
-        permissions: userPermissions
+        name: 'Teacher',
+        permissions: teacherPermissions
+    });
+
+    await roleService.create({
+        name: 'Student',
+        permissions: studentPermissions
     });
 
     process.exit()
 }
 bootstrap();
+
+// ! YOU NEED TO RUN THIS SEEDER INSIDE DOCKER CONTAINER OR IT WON'T WORK!
+// * docker exec -it <container id use (docker ps) to check> bash
+// * modify package.json script setting
+// * npm run seed:ambassadors 
