@@ -1,5 +1,5 @@
 import { Request } from 'express';
-import { BadRequestException, Body, Controller, Delete, ForbiddenException, Get, NotFoundException, Param, Post, Put, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, ClassSerializerInterceptor, Controller, Delete, ForbiddenException, Get, NotFoundException, Param, Post, Put, Req, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ClassroomService } from './classroom.service';
 import { AuthService } from 'src/auth/auth.service';
 import { UserService } from 'src/user/user.service';
@@ -9,23 +9,24 @@ import { ClassroomCreateDto } from './dto/create-classroom.dto';
 import { ClassroomTokenService } from 'src/classroom-token/classroom-token.service';
 import { ConfigService } from '@nestjs/config';
 
-    // ! TODO
-    /* 
-        ! Show token key only for teacher
-        ! Student request for joining classroom
-        
-        ! show students inside classroom
-        ! show student completion status
-        ! Add classroom review & rating
-        ! Create classroom categories
-        ! Create classroom learning path
+// ! TODO
+/* 
+    ! Show token key only for teacher
+    ! Student request for joining classroom
+    
+    ! show students inside classroom
+    ! show student completion status
+    ! Add classroom review & rating
+    ! Create classroom categories
+    ! Create classroom learning path
 
-        ? Add classroom picture 
-        ? Add classroom level difficulty
-        ? Add classroom study time estimation
+    ? Add classroom picture 
+    ? Add classroom level difficulty
+    ? Add classroom study time estimation
 
-    */
+*/
 
+@UseInterceptors(ClassSerializerInterceptor)
 @Controller('classroom')
 export class ClassroomController {
     constructor(
@@ -59,13 +60,13 @@ export class ClassroomController {
 
         if (!body.picture) {
             body.picture = `${this.configService.get('SERVER')}classroom/uploads/default-class.jpg`;
-        } 
+        }
 
         let teachers = [];
         if (body.teachers) {
             teachers = body.teachers.map((id) => ({ id }));
         }
-    
+
         const classroom = await this.classroomService.create({
             ...body,
             teachers: [...teachers, { id: userId }] // Add the current user as a teacher
@@ -81,6 +82,7 @@ export class ClassroomController {
     }
 
     // * Update Classroom
+    // ! Fix this
     @UseGuards(AuthGuard)
     @Put(':classroom')
     async update(
@@ -97,7 +99,7 @@ export class ClassroomController {
         // Set the default picture if none is provided
         if (!body.picture) {
             body.picture = `${this.configService.get('SERVER')}classroom/uploads/default-class.jpg`;
-        } 
+        }
 
         const classroom = await this.classroomService.create({
             ...body,
@@ -113,6 +115,50 @@ export class ClassroomController {
         return { classroom, classroomToken };
     }
 
+    // * Assign a teacher to a specific classroom
+    @UseGuards(AuthGuard)
+    @Post(':classroomId/teacher')
+    async assignTeacherToClassroom(
+        @Param('classroomId') classroomId: string,
+        @Body('user_id') user_id: string,
+        @Req() request: Request
+    ) {
+        if (!isUUID(classroomId)) {
+            throw new BadRequestException('Invalid UUID format');
+        }
+        const teacher = await this.authService.userId(request);
+
+        const classroom = await this.classroomService.findOne({ id: classroomId }, ['teachers']);
+
+        if (!classroom) {
+            throw new NotFoundException('Classroom not found');
+        }
+
+        // * Check if the user id exist on teacher_classrooms table
+        const isCreator = classroom.teachers.some((existingTeacher: any) => existingTeacher.id === teacher);
+
+        if (!isCreator) {
+            throw new ForbiddenException('You do not have permission to assign teachers to this classroom');
+        }
+
+        const user = await this.userService.findOne({ id: user_id });
+
+        if (!user) {
+            throw new NotFoundException('User not found');
+        }
+
+        // * Check if the teacher is already assigned to the classroom
+        const userAlreadyInClassroom = classroom.teachers.some((existingUser: any) => existingUser.id === user_id);
+
+        if (userAlreadyInClassroom) {
+            throw new BadRequestException('Teacher is already assigned to this classroom');
+        }
+
+        classroom.teachers.push(user);
+
+        return this.classroomService.create(classroom);
+    }
+
     // * Assign a user to a specific classroom
     @UseGuards(AuthGuard)
     @Post(':classroomId/user')
@@ -123,7 +169,7 @@ export class ClassroomController {
     ) {
         if (!isUUID(classroomId)) {
             throw new BadRequestException('Invalid UUID format');
-        }   
+        }
         const teacher = await this.authService.userId(request);
 
         const classroom = await this.classroomService.findOne({ id: classroomId }, ['users']);
@@ -132,8 +178,13 @@ export class ClassroomController {
             throw new NotFoundException('Classroom not found');
         }
 
-        if (classroom.user_teacher !== teacher) {
-            throw new ForbiddenException();
+        // * Check if the user id exist on teacher_classrooms table
+        const classroom_teach = await this.classroomService.findOne({ id: classroomId }, ['teachers']);
+
+        const isCreator = classroom_teach.teachers.some((existingTeacher: any) => existingTeacher.id === teacher);
+
+        if (!isCreator) {
+            throw new ForbiddenException('You do not have permission to assign teachers to this classroom');
         }
 
         const user = await this.userService.findOne({ id: user_id });
@@ -152,6 +203,40 @@ export class ClassroomController {
         classroom.users.push(user);
 
         return this.classroomService.create(classroom);
+    }
+
+    // * Remove a teacher from a specific classroom
+    // ! Fix this
+    @UseGuards(AuthGuard)
+    @Delete(':classroomId/user/:userId')
+    async removeTeacherFromClassroom(
+        @Param('classroomId') classroomId: string,
+        @Param('userId') userId: string,
+    ) {
+        if (!isUUID(classroomId) || !isUUID(userId)) {
+            throw new BadRequestException('Invalid UUID format');
+        }
+
+        const classroom = await this.classroomService.findOne({ id: classroomId }, ['users']);
+
+        if (!classroom) {
+            throw new NotFoundException('Classroom not found');
+        }
+
+        // * Check user 
+        const userIndex = classroom.users.findIndex(existingUser => existingUser.id === userId);
+
+        if (userIndex === -1) {
+            throw new NotFoundException('User not found in this classroom');
+        }
+
+        // * Remove user
+        classroom.users.splice(userIndex, 1);
+
+        // * Update table
+        await this.classroomService.create(classroom);
+
+        return { message: 'User removed from classroom successfully' };
     }
 
     // * Remove a user from a specific classroom
