@@ -13,6 +13,18 @@ export enum ClassStatus {
     closed = 'Closed',
 }
 
+export enum ClassLevel {
+    beginner = 'Beginner',
+    medium = 'Medium',
+    hard = 'Hard',
+    advance = 'Advance',
+}
+
+export enum ClassVisibility {
+    public = 'Public',
+    private = 'Private',
+}
+
 @Entity('classrooms')
 export class Classroom {
     @PrimaryGeneratedColumn('uuid')
@@ -22,7 +34,20 @@ export class Classroom {
     name: string;
 
     @Column()
-    description: string;
+    small_description: string;
+
+    @Column()
+    study_estimation: string;
+
+    @Column({ type: 'text' })
+    long_description: string;
+
+    @Column({
+        type: 'enum',
+        enum: ClassLevel,
+        default: ClassLevel.beginner
+    })
+    class_level: ClassLevel;
 
     @Column({
         type: 'enum',
@@ -38,11 +63,22 @@ export class Classroom {
     })
     class_status: ClassStatus;
 
+    @Column({
+        type: 'enum',
+        enum: ClassVisibility,
+        default: ClassVisibility.private
+    })
+    class_visibility: ClassVisibility;
+
+    // ! Wait after frontend is ready then use this
     @Column({nullable: true})
     class_deadline: Date;
 
     @Column({name: "user_teacher"})
     user_teacher: string;
+
+    @Column()
+    picture: string;
 
     @OneToMany(() => ClassroomSession, (classroom_session) => classroom_session.classroom)
     classroom_session: ClassroomSession[];

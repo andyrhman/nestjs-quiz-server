@@ -1,17 +1,21 @@
-import { IsEnum, IsNotEmpty, IsOptional } from "class-validator";
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from "class-validator";
 import { ClassLevel, ClassStatus, ClassType, ClassVisibility } from "../models/classroom.entity";
 
 export class ClassroomCreateDto {
-    @IsNotEmpty({ message: 'Classroom name is required' })
+    @IsOptional()
+    @IsString()
     name: string;
 
-    @IsNotEmpty({ message: 'Classroom Info is required' })
+    @IsString()
+    @IsOptional()
     small_description: string;
 
-    @IsNotEmpty({ message: 'Classroom Description is required' })
+    @IsString()
+    @IsOptional()
     long_description: string;
 
-    @IsNotEmpty({ message: 'Study Estimation is required' })
+    @IsString()
+    @IsOptional()
     study_estimation: string;
 
     @IsOptional()

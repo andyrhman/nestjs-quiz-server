@@ -7,6 +7,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from 'src/auth/auth.module';
 import { UserModule } from 'src/user/user.module';
 import { ClassroomTokenModule } from 'src/classroom-token/classroom-token.module';
+import { UploadController } from './classroom-upload.controller';
 
 @Module({
   imports: [
@@ -17,6 +18,6 @@ import { ClassroomTokenModule } from 'src/classroom-token/classroom-token.module
     ClassroomTokenModule
   ],
   providers: [ClassroomService],
-  controllers: [ClassroomController]
+  controllers: [ClassroomController, UploadController]
 })
 export class ClassroomModule {}
