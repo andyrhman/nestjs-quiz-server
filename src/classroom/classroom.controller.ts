@@ -57,14 +57,18 @@ export class ClassroomController {
             throw new BadRequestException(`Classroom with the name '${body.name}' already exists`);
         };
 
-        // Set the default picture if none is provided
         if (!body.picture) {
             body.picture = `${this.configService.get('SERVER')}classroom/uploads/default-class.jpg`;
         } 
 
+        let teachers = [];
+        if (body.teachers) {
+            teachers = body.teachers.map((id) => ({ id }));
+        }
+    
         const classroom = await this.classroomService.create({
             ...body,
-            user_teacher: userId
+            teachers: [...teachers, { id: userId }] // Add the current user as a teacher
         });
 
         // Generate and save the classroom token
@@ -76,6 +80,7 @@ export class ClassroomController {
         return { classroom, classroomToken };
     }
 
+    // * Update Classroom
     @UseGuards(AuthGuard)
     @Put(':classroom')
     async update(

@@ -41,8 +41,8 @@ export class User {
   @ManyToMany(() => Classroom, (classroom) => classroom.users)
   classrooms: Classroom[];
 
-  @OneToMany(() => Classroom, (classroom) => classroom.teacher)
-  teacher: Classroom[];
+  @ManyToMany(() => Classroom, (classroom) => classroom.teachers)
+  teachers: Classroom[];
 
   @OneToMany(() => Score, (scores) => scores.user)
   scores: Score[];

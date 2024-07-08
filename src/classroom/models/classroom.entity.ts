@@ -74,9 +74,6 @@ export class Classroom {
     @Column({nullable: true})
     class_deadline: Date;
 
-    @Column({name: "user_teacher"})
-    user_teacher: string;
-
     @Column()
     picture: string;
 
@@ -85,10 +82,6 @@ export class Classroom {
 
     @OneToMany(() => ClassroomToken, (class_token) => class_token.classroom)
     class_token: ClassroomToken[];
-
-    @ManyToOne(() => User, (user_teacher) => user_teacher.teacher)
-    @JoinColumn({name: "user_teacher"})
-    teacher: User;
 
     @ManyToMany(() => User, (user) => user.classrooms, { onDelete: 'CASCADE' })
     @JoinTable({
@@ -103,4 +96,18 @@ export class Classroom {
         },
     })
     users: User[];
+
+    @ManyToMany(() => User, (user) => user.classrooms, { onDelete: 'CASCADE' })
+    @JoinTable({
+        name: "teacher_classrooms",
+        joinColumn: {
+            name: "classroom_id",
+            referencedColumnName: "id",
+        },
+        inverseJoinColumn: {
+            name: "teacher_id",
+            referencedColumnName: "id",
+        },
+    })
+    teachers: User[];
 }
