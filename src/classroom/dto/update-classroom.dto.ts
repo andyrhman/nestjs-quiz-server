@@ -1,7 +1,7 @@
-import { IsEnum, IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { IsArray, IsEnum, IsOptional, IsString, IsUUID } from "class-validator";
 import { ClassLevel, ClassStatus, ClassType, ClassVisibility } from "../models/classroom.entity";
 
-export class ClassroomCreateDto {
+export class ClassroomUpdateDto {
     @IsOptional()
     @IsString()
     name: string;
@@ -36,4 +36,9 @@ export class ClassroomCreateDto {
     @IsEnum(ClassVisibility, { message: 'Invalid Classroom Visibility' })
     @IsOptional()
     class_visibility: ClassVisibility;
+
+    @IsOptional()
+    @IsArray()
+    @IsUUID('4', { each: true, message: 'Invalid Teacher ID' })
+    teachers: string[];
 }

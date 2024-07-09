@@ -38,7 +38,7 @@ export class User {
   @Column({ default: false })
   is_verified: boolean;
 
-  @ManyToMany(() => Classroom, (classroom) => classroom.users)
+  @ManyToMany(() => Classroom, (classroom) => classroom.students)
   classrooms: Classroom[];
 
   @ManyToMany(() => Classroom, (classroom) => classroom.teachers)
@@ -54,8 +54,6 @@ export class User {
   @JoinColumn({ name: "role_id" })
   role: Role;
 
-  constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
-
   @BeforeInsert()
   @BeforeUpdate()
   emailToLowerCase() {
@@ -66,21 +64,5 @@ export class User {
   @BeforeUpdate()
   usernameToLowerCase() {
     this.username = this.username.toLowerCase();
-  }
-
-  @BeforeInsert()
-  async generateStudentId() {
-    const year = new Date().getFullYear().toString().slice(-2); // Get last two digits of the current year
-
-    const userCount = await this.dataSource
-      .getRepository(User)
-      .createQueryBuilder('user')
-      .where(`user.created_at LIKE :year`, { year: `${new Date().getFullYear()}%` })
-      .getCount(); // Get the count of users registered in the current year
-
-    const increment = (userCount + 1).toString().padStart(6, '0'); // Increment and pad with leading zeros
-    this.student_id = `${year}${increment}`; // Generate student ID
-    console.log(`Generated student_id: ${this.student_id}`);
-
   }
 }

@@ -95,9 +95,9 @@ export class Classroom {
             referencedColumnName: "id",
         },
     })
-    users: User[];
+    students: User[];
 
-    @ManyToMany(() => User, (user) => user.classrooms, { onDelete: 'CASCADE' })
+    @ManyToMany(() => User, (user) => user.teachers, { onDelete: 'CASCADE' })
     @JoinTable({
         name: "teacher_classrooms",
         joinColumn: {

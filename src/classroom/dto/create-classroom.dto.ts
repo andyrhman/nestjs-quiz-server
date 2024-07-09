@@ -37,4 +37,9 @@ export class ClassroomCreateDto {
     @IsArray()
     @IsUUID('4', { each: true, message: 'Invalid Teacher ID' })
     teachers: string[];
+
+    @IsOptional()
+    @IsArray()
+    @IsUUID('4', { each: true, message: 'Invalid Student ID' })
+    students: string[];
 }
