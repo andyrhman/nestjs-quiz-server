@@ -9,6 +9,8 @@ import { ClassroomCreateDto } from './dto/create-classroom.dto';
 import { ClassroomTokenService } from 'src/classroom-token/classroom-token.service';
 import { ConfigService } from '@nestjs/config';
 import { ClassroomUpdateDto } from './dto/update-classroom.dto';
+import { JoinPaidClassroomService } from './join-paid-classroom.service';
+import { ClassPaidStatus } from './models/join-classroom.entity';
 
 // ! TODO
 /* 
@@ -32,6 +34,7 @@ import { ClassroomUpdateDto } from './dto/update-classroom.dto';
 export class ClassroomController {
     constructor(
         private classroomService: ClassroomService,
+        private joinPaidClassroomService: JoinPaidClassroomService,
         private authService: AuthService,
         private userService: UserService,
         private classroomTokenServie: ClassroomTokenService,
@@ -304,6 +307,71 @@ export class ClassroomController {
         return { message: 'User removed from classroom successfully' };
     }
 
+    // * User join clasroom free
+    @UseGuards(AuthGuard)
+    @Post('join/free/:classroomId')
+    async userJoinClassroomFree(
+        @Param('classroomId') classroomId: string,
+        @Req() request: Request
+    ) {
+        if (!isUUID(classroomId)) {
+            throw new BadRequestException('Invalid UUID format');
+        }
+        const user = await this.authService.userId(request);
+
+        const classroom = await this.classroomService.findOne({ id: classroomId }, ['students']);
+
+        if (!classroom) {
+            throw new NotFoundException('Classroom not found');
+        }
+
+        // * Check if the user id exist on classroom table
+        const userIndex = classroom.students.some((find: any) => find.id === user);
+
+        if (userIndex) {
+            throw new ConflictException('User already in classroom');
+        }
+
+        const inserUser = await this.userService.findOne({ id: user });
+
+        classroom.students.push(inserUser);
+
+        return this.classroomService.create(classroom);
+    }
+
+    // * User join classroom paid
+    @UseGuards(AuthGuard)
+    @Post('join/paid/:classroomId')
+    async userJoinClassroomPaid(
+        @Param('classroomId') classroomId: string,
+        @Req() request: Request
+    ) {
+        if (!isUUID(classroomId)) {
+            throw new BadRequestException('Invalid UUID format');
+        }
+        const user = await this.authService.userId(request);
+
+        const classroom = await this.classroomService.findOne({ id: classroomId }, ['students']);
+
+        if (!classroom) {
+            throw new NotFoundException('Classroom not found');
+        }
+
+        // * Check if the user is already assigned to the classroom
+        const userIndex = classroom.students.some((existingUser: any) => existingUser.id === user);
+
+        if (userIndex) {
+            throw new BadRequestException('User is already assigned to this classroom');
+        }
+
+        const insertUser = await this.userService.findOne({ id: user });
+
+        return this.joinPaidClassroomService.create({
+            classroom_id: classroom,
+            user_id: insertUser
+        });
+    }
+
     // * User leave classroom
     @UseGuards(AuthGuard)
     @Delete(':classroomId/exit')
@@ -314,7 +382,7 @@ export class ClassroomController {
         if (!isUUID(classroomId)) {
             throw new BadRequestException('Invalid UUID format');
         }
-        
+
         const user = await this.authService.userId(request);
 
         const classroom = await this.classroomService.findOne({ id: classroomId }, ['students']);
@@ -331,7 +399,6 @@ export class ClassroomController {
 
         return { message: "Success" };
     }
-
 
     // * Get authenticated teacher clasroom
     @UseGuards(AuthGuard)
@@ -353,5 +420,44 @@ export class ClassroomController {
         const id = await this.authService.userId(request);
 
         return this.userService.findOne({ id }, ['classrooms']);
+    }
+
+    // ! Pay classroom and auto join
+    // ! Use Stripe?
+    @UseGuards(AuthGuard)
+    @Put('pay/:classroomId')
+    async payClassroomAndJoin(
+        @Param('classroomId') classroomId: string,
+        @Req() request: Request
+    ) {
+        if (!isUUID(classroomId)) {
+            throw new BadRequestException('Invalid UUID format');
+        }
+
+        const id = await this.authService.userId(request);
+
+        const user = await this.userService.findOne({ id });
+
+        await this.joinPaidClassroomService.update(
+            { classroom_id: classroomId, user_id: id },
+            { paid_status: ClassPaidStatus.paid }
+        );        
+
+        const classroom = await this.classroomService.findOne({ id: classroomId }, ['students']);
+
+        if (!classroom) {
+            throw new NotFoundException();
+        }
+
+        // * Check if the user is already assigned to the classroom
+        const userIndex = classroom.students.some((existingUser: any) => existingUser.id === user);
+
+        if (userIndex) {
+            throw new BadRequestException('User is already assigned to this classroom');
+        }
+
+        classroom.students.push(user);
+
+        return this.classroomService.create(classroom);
     }
 }

@@ -2,6 +2,7 @@ import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany
 import { ClassroomSession } from "src/classroom-session/models/classroom-session.models";
 import { User } from "src/user/models/user.entity";
 import { ClassroomToken } from "src/classroom-token/models/classroom-token.entity";
+import { JoinClassroomStatusPaid } from "./join-classroom.entity";
 
 export enum ClassType {
     free = 'Free',
@@ -82,6 +83,9 @@ export class Classroom {
 
     @OneToMany(() => ClassroomToken, (class_token) => class_token.classroom)
     class_token: ClassroomToken[];
+
+    @OneToMany(() => JoinClassroomStatusPaid, (classroom_status_paid) => classroom_status_paid.classroom)
+    classroom_status_paid: JoinClassroomStatusPaid[];
 
     @ManyToMany(() => User, (user) => user.classrooms, { onDelete: 'CASCADE' })
     @JoinTable({

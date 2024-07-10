@@ -65,7 +65,7 @@ export abstract class AbstractService {
         return this.repository.save(data);
     }
 
-    async update(id: string, data): Promise<any> {
+    async update(id: any, data: any): Promise<any> {
         return this.repository.update(id, data);
     }
 
