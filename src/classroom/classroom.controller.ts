@@ -304,7 +304,34 @@ export class ClassroomController {
         return { message: 'User removed from classroom successfully' };
     }
 
-    // ! User leave classroom
+    // * User leave classroom
+    @UseGuards(AuthGuard)
+    @Delete(':classroomId/exit')
+    async userLeaveClassroom(
+        @Param('classroomId') classroomId: string,
+        @Req() request: Request
+    ) {
+        if (!isUUID(classroomId)) {
+            throw new BadRequestException('Invalid UUID format');
+        }
+        
+        const user = await this.authService.userId(request);
+
+        const classroom = await this.classroomService.findOne({ id: classroomId }, ['students']);
+
+        const checkUser = classroom.students.findIndex((student: any) => student.id === user);
+
+        if (checkUser === -1) {
+            throw new NotFoundException("Student not found");
+        }
+
+        classroom.students.splice(checkUser, 1);
+
+        await this.classroomService.create(classroom);
+
+        return { message: "Success" };
+    }
+
 
     // * Get authenticated teacher clasroom
     @UseGuards(AuthGuard)
