@@ -78,6 +78,9 @@ export class Classroom {
     @Column()
     picture: string;
 
+    @Column()
+    price: number;
+
     @OneToMany(() => ClassroomSession, (classroom_session) => classroom_session.classroom)
     classroom_session: ClassroomSession[];
 

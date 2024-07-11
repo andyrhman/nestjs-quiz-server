@@ -1,6 +1,7 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { Classroom } from "./classroom.entity";
 import { User } from "src/user/models/user.entity";
+import { OrderItem } from "src/order/models/order-item.entity";
 
 export enum ClassPaidStatus {
     paid = "Paid",
@@ -25,11 +26,14 @@ export class JoinClassroomStatusPaid{
     @Column({name: "user_id"})
     user_id: string;
 
-    @ManyToOne(() => Classroom, (classroom) => classroom.classroom_status_paid)
+    @OneToMany(() => OrderItem, order_item => order_item.classroom)
+    order_item: OrderItem[];
+
+    @ManyToOne(() => Classroom, (classroom) => classroom.classroom_status_paid, { onDelete: 'CASCADE' })
     @JoinColumn({name: "classroom_id"})
     classroom: Classroom;
 
-    @ManyToOne(() => User, user => user.user_status_paid)
+    @ManyToOne(() => User, user => user.user_status_paid, { onDelete: 'CASCADE' })
     @JoinColumn({name: "user_id"})
     user: User;
 }

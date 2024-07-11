@@ -20,6 +20,7 @@ import { JoinPaidClassroomService } from './join-paid-classroom.service';
     ClassroomTokenModule
   ],
   providers: [ClassroomService, JoinPaidClassroomService],
-  controllers: [ClassroomController, UploadController]
+  controllers: [ClassroomController, UploadController],
+  exports: [ClassroomService, JoinPaidClassroomService]
 })
 export class ClassroomModule {}
