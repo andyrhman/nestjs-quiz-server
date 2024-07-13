@@ -2,6 +2,7 @@ import { Expose } from "class-transformer";
 import { User } from "src/user/models/user.entity";
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { OrderItem } from "./order-item.entity";
+import { Cart } from "src/classroom/models/join-classroom.entity";
 
 @Entity('orders')
 export class Order {
@@ -25,6 +26,9 @@ export class Order {
 
     @Column({default: false})
     completed: boolean;
+
+    @OneToMany(() => Cart, (cart) => cart.classroom)
+    cart: Cart[];
 
     @ManyToOne(() => User, (user) => user.orders)
     @JoinColumn({ name: "user_id" })

@@ -8,12 +8,12 @@ import { AuthModule } from 'src/auth/auth.module';
 import { UserModule } from 'src/user/user.module';
 import { ClassroomTokenModule } from 'src/classroom-token/classroom-token.module';
 import { UploadController } from './classroom-upload.controller';
-import { JoinClassroomStatusPaid } from './models/join-classroom.entity';
+import { Cart } from './models/join-classroom.entity';
 import { JoinPaidClassroomService } from './join-paid-classroom.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Classroom, JoinClassroomStatusPaid]),
+    TypeOrmModule.forFeature([Classroom, Cart]),
     CommonModule,
     AuthModule,
     UserModule,

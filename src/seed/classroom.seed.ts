@@ -16,7 +16,10 @@ const bootstrap = async () => {
 
     for (let i = 0; i < 10; i++) {
         // * Randomly select 3 students and 1 teacher from the list of users
-        const students = faker.helpers.arrayElements(allUsers, 3);
+        // const students = faker.helpers.arrayElements(allUsers, 3);
+        // classroom.students = students;
+
+        const students = faker.helpers.arrayElement(allUsers);
         const teacher = faker.helpers.arrayElement(allUsers);
 
         const classroom = new Classroom();
@@ -31,7 +34,7 @@ const bootstrap = async () => {
         classroom.class_deadline = faker.date.future();
         classroom.picture = faker.image.url();
         classroom.price = i < 5 ? 0 : faker.number.int({ min: 1000000, max: 5000000 });
-        classroom.students = students;
+        classroom.students = [students];
         classroom.teachers = [teacher];
 
         await classroomService.create(classroom);

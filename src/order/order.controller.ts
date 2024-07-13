@@ -13,7 +13,7 @@ import { DataSource } from 'typeorm';
 import Stripe from 'stripe';
 import { JoinPaidClassroomService } from 'src/classroom/join-paid-classroom.service';
 import { Order } from './models/order.entity';
-import { JoinClassroomStatusPaid } from 'src/classroom/models/join-classroom.entity';
+import { Cart } from 'src/classroom/models/join-classroom.entity';
 import { OrderItem } from './models/order-item.entity';
 
 @Controller()
@@ -46,7 +46,7 @@ export class OrderController {
             await queryRunner.startTransaction();
 
             const o = new Order();
-            o.name = user.fullName;
+            o.name = user.fullname;
             o.email = user.email;
             o.user_id = userId;
 
@@ -57,65 +57,67 @@ export class OrderController {
 
             for (let c of body.classrooms) {
 
-                const classroom: JoinClassroomStatusPaid[] = await this.joinPaidClassroomService.find({ id: c.class_id, user_id: userId }, ['classroom', 'user']);
+                const cart: Cart[] = await this.joinPaidClassroomService.find({ id: c.class_id, user_id: userId }, ['classroom', 'user']);
 
-                if (classroom.length === 0) {
-                    throw new NotFoundException("Cart not found.");
+                const checkId = cart.some((checkClass) => checkClass.id === c.class_id);
+                if (!checkId) {
+                    throw new NotFoundException("Clasroom id not found");
                 }
 
-                if (classroom[0].paid_status === "Paid") {
+                if (cart.length === 0) {
+                    throw new NotFoundException("Order not found");
+                }
+
+                if (cart[0].paid_status === "Paid") {
                     throw new BadRequestException("Invalid order, please add new order.");
                 }
+
+
                 const orderItem = new OrderItem();
 
                 orderItem.order = order;
 
-                orderItem.product_title = classroom[0].classroom.name;
-                // orderItem.price = cart[0].price;
-                // orderItem.quantity = cart[0].quantity;
-                // orderItem.product_id = cart[0].product_id;
-                // orderItem.variant_id = cart[0].variant_id;
+                orderItem.product_title = cart[0].classroom.name;
+                orderItem.price = cart[0].classroom.price;
+                orderItem.classroom_id = cart[0].classroom.id;
 
-                //         const totalAmount = cart[0].price * cart[0].quantity;
-                //         if (totalAmount < 7500) {
-                //             throw new BadRequestException("The total amount must be at least Rp7,500.00");
-                //         }
+                cart[0].order_id = order.id;
 
-                //         cart[0].order_id = order.id;
-                //         await queryRunner.manager.update(Cart, cart[0].id, cart[0]);
+                await queryRunner.manager.update(Cart, cart[0].id, cart[0]);
 
-                //         await queryRunner.manager.save(orderItem);
+                await queryRunner.manager.save(orderItem);
 
-                //         // * Stripe
-                //         line_items.push({
-                //             price_data: {
-                //                 currency: 'idr',
-                //                 unit_amount: cart[0].price,
-                //                 product_data: {
-                //                     name: `${cart[0].product_title} - Variant ${cart[0].variant.name}`,
-                //                     description: cart[0].product.description,
-                //                     images: [
-                //                         `${cart[0].product.image}`
-                //                     ]
-                //                 },
-                //             },
-                //             quantity: cart[0].quantity
-                //         })
+                // * Stripe
+                line_items.push({
+                    price_data: {
+                        currency: 'idr',
+                        unit_amount: cart[0].classroom.price,
+                        product_data: {
+                            name: `${cart[0].classroom.name}`,
+                            description: cart[0].classroom.small_description,
+                            images: [
+                                `${cart[0].classroom.picture}`
+                            ]
+                        }
+
+                    },
+                    quantity: 1
+                });
             }
-            //     // * Stripe
-            //     const source = await this.stripeClient.checkout.sessions.create({
-            //         payment_method_types: ['card'],
-            //         mode: 'payment',
-            //         line_items,
-            //         success_url: `${this.configService.get('CHECKOUT_URL')}/success?source={CHECKOUT_SESSION_ID}`,
-            //         cancel_url: `${this.configService.get('CHECKOUT_URL')}/error`,
-            //     })
+            // * Stripe
+            const source = await this.stripeClient.checkout.sessions.create({
+                payment_method_types: ['card'],
+                mode: 'payment',
+                line_items,
+                success_url: `${this.configService.get('ORIGIN_2')}/success?source={CHECKOUT_SESSION_ID}`,
+                cancel_url: `${this.configService.get('ORIGIN_2')}/error`,
+            });
 
-            //     order.transaction_id = source['id'];
-            //     await queryRunner.manager.save(order);
+            order.transaction_id = source['id'];
+            await queryRunner.manager.save(order);
 
-            //     await queryRunner.commitTransaction();
-            //     return source;
+            await queryRunner.commitTransaction();
+            return source;
         } catch (err) {
             await queryRunner.rollbackTransaction();
             console.log(err);
@@ -124,4 +126,36 @@ export class OrderController {
             await queryRunner.release();
         }
     }
+
+    @Post('checkout/orders/confirm')
+    async confirm(
+        @Body('source') source: string,
+        @Req() request: Request
+    ) {
+        const user = await this.authService.userId(request);
+
+        const order = await this.orderService.findOne({
+            transaction_id: source,
+            user_id: user
+        }, ['user', 'order_items']);
+
+        if (!order) {
+            throw new NotFoundException("Order not found");
+        }
+
+        const classroom_paid: Cart[] = await this.joinPaidClassroomService.find({ order_id: order.id, user_id: user });
+        console.log(classroom_paid);
+        // if (carts.length === 0) {
+        //     throw new ForbiddenException()
+        // }
+        // for (let cart of carts) {
+        //     await this.cartService.update(cart.id, { completed: true });
+        // }
+        // await this.orderService.update(order.id, { completed: true })
+        // await this.eventEmiter.emit('order.completed', order);
+        // return {
+        //     message: 'success'
+        // }
+    }
+
 }

@@ -7,7 +7,7 @@ import { Token } from './token.entity';
 import { Role } from 'src/role/models/role.entity';
 import { DataSource } from 'typeorm';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { JoinClassroomStatusPaid } from 'src/classroom/models/join-classroom.entity';
+import { Cart } from 'src/classroom/models/join-classroom.entity';
 import { Order } from 'src/order/models/order.entity';
 
 @Entity('users')
@@ -59,8 +59,8 @@ export class User {
   @JoinColumn({ name: "role_id" })
   role: Role;
 
-  @OneToMany(() => JoinClassroomStatusPaid, (user_status_paid) => user_status_paid.user)
-  user_status_paid: JoinClassroomStatusPaid[];
+  @OneToMany(() => Cart, (cart) => cart.user)
+  cart: Cart[];
 
   @BeforeInsert()
   @BeforeUpdate()
