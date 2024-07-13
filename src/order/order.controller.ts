@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, NotFoundException, Post, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, ForbiddenException, NotFoundException, Post, Req, UseGuards } from '@nestjs/common';
 import { OrderService } from './order.service';
 import { OrderItemService } from './order-item.service';
 import { AuthGuard } from 'src/auth/auth.guard';
@@ -143,19 +143,22 @@ export class OrderController {
             throw new NotFoundException("Order not found");
         }
 
-        const classroom_paid: Cart[] = await this.joinPaidClassroomService.find({ order_id: order.id, user_id: user });
-        console.log(classroom_paid);
-        // if (carts.length === 0) {
-        //     throw new ForbiddenException()
-        // }
+        const carts: Cart[] = await this.joinPaidClassroomService.find({ order_id: order.id, user_id: user });
+
+        if (carts.length === 0) {
+            throw new ForbiddenException();
+        }
+        carts.map(async (c) => (
+            await this.joinPaidClassroomService.update(c.id, { paid_status: 'Paid' })
+        ));
         // for (let cart of carts) {
         //     await this.cartService.update(cart.id, { completed: true });
         // }
-        // await this.orderService.update(order.id, { completed: true })
+        await this.orderService.update(order.id, { completed: true })
         // await this.eventEmiter.emit('order.completed', order);
-        // return {
-        //     message: 'success'
-        // }
+        return {
+            message: 'success'
+        }
     }
 
 }
